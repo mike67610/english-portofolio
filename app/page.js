@@ -1,20 +1,21 @@
 "use client";
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('diary');
   const [saveStatus, setSaveStatus] = useState(false);
-  const [loadingAction, setLoadingAction] = useState(null);
-  const [aiOutput, setAiOutput] = useState('');
-
-  const defaultText = "[Paste the exact Diary and Blog text you wrote on the site here]";
 
   // State for inputs
   const [inputs, setInputs] = useState({
-    'diary-content': defaultText,
-    'blog1-title': '', 'blog1-content': defaultText,
-    'blog2-title': '', 'blog2-content': defaultText,
-    'blog3-title': '', 'blog3-content': defaultText
+    'diary-title': 'Evening Skate, Feeder Buses, and System Tweaks',
+    'diary-date': 'September 18, 2026',
+    'diary-content': 'School was alright today, though JC1 classes are definitely starting to pick up. Took the Wira Wiri FD06 feeder bus back home to West Surabaya after class. Tap-and-go with e-money makes getting through afternoon traffic way less stressful than sitting in a car. Got home, ate a quick snack, and hit a 45-minute dumbbell workout on the flat bench to clear my head. Once the weather cooled down around sunset, I grabbed my 31-inch board and zipped up my Hikemore jacket to cruise around the neighborhood for a bit. My balance on quick turns is getting way smoother. Spent the rest of the night in my room with my IEMs on, listening to music while updating a few configurations on Debian and finishing up this English project. It feels good when everything runs fast and clean without clutter.',
+    'blog1-title': 'How Atmosphere Shapes Horror and Isolation in Storytelling',
+    'blog1-content': 'In narrative fiction and psychological horror, atmosphere isn\'t just background detail—it acts like an extra character. When an author or storyteller isolates a protagonist, they rely heavily on environmental cues to build tension rather than just jumping straight to action. Environmental quiet highlights small, everyday sounds—footsteps on damp pavement, flickering streetlights, or cold rain against glass. Keeping the perspective strictly limited forces the audience to experience the same uncertainty. Setting a story in familiar, mundane spaces makes the horror feel far more realistic and unsettling.',
+    'blog2-title': 'Frame by Frame Through the Bus Window',
+    'blog2-content': 'The glass of the feeder bus window was cold against my forehead as we idle at the red light. Outside, gray clouds sat low over the street, reflecting off wet asphalt while evening traffic slowly crawled past. Watching people rush past under streetlights, I realized how every single person out there is living a full, complex story you\'ll never actually read. The motorbikes filtering between lanes, the shop owners pulling down their shutters, the students walking home with heavy backpacks—everyone has their own routine, their own goals, and their own problems.',
+    'blog3-title': 'How Tech and Minimalist Design Sharpened My English Writing Skills',
+    'blog3-content': 'I used to think that writing good English meant using long, complex words and giant paragraphs. But working with tech, writing system documentation, and building minimalist web user interfaces completely changed how I think about language. Clarity comes first—when you write code, configure system files, or structure a clean UI, fluff only gets in the way. Writing works the exact same way. Expressing an idea in three sharp sentences is almost always better than hiding it inside a paragraph of filler. Using bullet points and clear structure helps readers understand your point immediately.'
   });
 
   // Load from localStorage on mount
@@ -26,11 +27,11 @@ export default function Home() {
       if (val !== null) {
         saved[key] = val;
         hasSaved = true;
-      } else {
-        saved[key] = key.includes('content') ? defaultText : '';
       }
     });
-    if (hasSaved) setInputs(saved);
+    if (hasSaved) {
+        setInputs(prev => ({ ...prev, ...saved }));
+    }
   }, []);
 
   // Handle auto-save
@@ -40,64 +41,15 @@ export default function Home() {
     localStorage.setItem(`portfolio_${key}`, val);
     
     // Auto-resize
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
+    if (e.target.tagName.toLowerCase() === 'textarea') {
+      e.target.style.height = 'auto';
+      e.target.style.height = e.target.scrollHeight + 'px';
+    }
 
     // Show status
     setSaveStatus(true);
     setTimeout(() => setSaveStatus(false), 1500);
   };
-
-  const handleAI = async (action, targetKey) => {
-    setLoadingAction(action);
-    setAiOutput('');
-    const text = inputs[targetKey].trim();
-    
-    if (!text && action !== 'ideas') {
-        setAiOutput("Please type something first!");
-        setLoadingAction(null);
-        return;
-    }
-
-    try {
-      const res = await fetch('/api/ai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, text })
-      });
-      const data = await res.json();
-      
-      if (data.error) throw new Error(data.error);
-
-      if (action === 'grammar') {
-        setInputs(prev => ({ ...prev, [targetKey]: data.result }));
-        localStorage.setItem(`portfolio_${targetKey}`, data.result);
-        setAiOutput("Successfully polished and updated the text box!");
-        setSaveStatus(true);
-        setTimeout(() => setSaveStatus(false), 1500);
-      } else {
-        setAiOutput(data.result);
-      }
-    } catch (e) {
-      setAiOutput("Error: " + e.message);
-    } finally {
-      setLoadingAction(null);
-    }
-  };
-
-  const ActionBar = ({ targetKey }) => (
-    <div className="ai-action-bar">
-        <button className="ai-btn" disabled={loadingAction} onClick={() => handleAI('grammar', targetKey)}>
-            <span className="material-icons">auto_fix_high</span> {loadingAction === 'grammar' ? 'Polishing...' : 'Polish'}
-        </button>
-        <button className="ai-btn" disabled={loadingAction} onClick={() => handleAI('summarize', targetKey)}>
-            <span className="material-icons">short_text</span> {loadingAction === 'summarize' ? 'Working...' : 'Summarize'}
-        </button>
-        <button className="ai-btn" disabled={loadingAction} onClick={() => handleAI('ideas', targetKey)}>
-            <span className="material-icons">lightbulb</span> {loadingAction === 'ideas' ? 'Thinking...' : 'Ideas'}
-        </button>
-    </div>
-  );
 
   return (
     <>
@@ -105,26 +57,32 @@ export default function Home() {
           <div className="header-container">
               <h1 className="header-title">English Project Portfolio</h1>
               <div className="tabs">
-                  <button className={`tab-btn ${activeTab === 'diary' ? 'active' : ''}`} onClick={() => {setActiveTab('diary'); setAiOutput('');}}>Diary</button>
-                  <button className={`tab-btn ${activeTab === 'blogs' ? 'active' : ''}`} onClick={() => {setActiveTab('blogs'); setAiOutput('');}}>Blogs</button>
+                  <button className={`tab-btn ${activeTab === 'diary' ? 'active' : ''}`} onClick={() => setActiveTab('diary')}>Diary</button>
+                  <button className={`tab-btn ${activeTab === 'blogs' ? 'active' : ''}`} onClick={() => setActiveTab('blogs')}>Blogs</button>
               </div>
           </div>
       </header>
 
       <main>
-          {aiOutput && (
-              <div className="ai-output-box fade-in mb-8">
-                  <strong>AI Response:</strong>
-                  <p style={{whiteSpace: 'pre-wrap', marginTop: '8px'}}>{aiOutput}</p>
-                  <button onClick={() => setAiOutput('')} style={{background:'none',border:'none',color:'#1a73e8',cursor:'pointer',padding:0,marginTop:'8px',fontWeight:500}}>Dismiss</button>
-              </div>
-          )}
-
           {activeTab === 'diary' && (
             <div className="section active">
                 <div className="section-title">Daily Project Log</div>
                 <div className="mat-card">
-                    <ActionBar targetKey="diary-content" />
+                    <input 
+                        type="text" 
+                        className="editable-title" 
+                        placeholder="Diary Title..."
+                        value={inputs['diary-title']}
+                        onChange={(e) => handleInput(e, 'diary-title')}
+                    />
+                    <input 
+                        type="text" 
+                        className="editable-title" 
+                        style={{ fontSize: '1rem', color: '#666', marginBottom: '16px' }}
+                        placeholder="Date..."
+                        value={inputs['diary-date']}
+                        onChange={(e) => handleInput(e, 'diary-date')}
+                    />
                     <textarea 
                         className="editable-content" 
                         placeholder="Type your diary entry here..." 
@@ -141,7 +99,6 @@ export default function Home() {
                 
                 {[1, 2, 3].map(num => (
                     <div className="mat-card" key={num}>
-                        <ActionBar targetKey={`blog${num}-content`} />
                         <input 
                             type="text" 
                             className="editable-title" 
@@ -165,4 +122,3 @@ export default function Home() {
     </>
   );
 }
-
