@@ -7,12 +7,14 @@ export default function Home() {
   const [loadingAction, setLoadingAction] = useState(null);
   const [aiOutput, setAiOutput] = useState('');
 
+  const defaultText = "[Paste the exact Diary and Blog text you wrote on the site here]";
+
   // State for inputs
   const [inputs, setInputs] = useState({
-    'diary-content': '',
-    'blog1-title': '', 'blog1-content': '',
-    'blog2-title': '', 'blog2-content': '',
-    'blog3-title': '', 'blog3-content': ''
+    'diary-content': defaultText,
+    'blog1-title': '', 'blog1-content': defaultText,
+    'blog2-title': '', 'blog2-content': defaultText,
+    'blog3-title': '', 'blog3-content': defaultText
   });
 
   // Load from localStorage on mount
@@ -25,7 +27,7 @@ export default function Home() {
         saved[key] = val;
         hasSaved = true;
       } else {
-        saved[key] = '';
+        saved[key] = key.includes('content') ? defaultText : '';
       }
     });
     if (hasSaved) setInputs(saved);
